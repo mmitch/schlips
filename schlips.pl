@@ -7,6 +7,9 @@ use Tk::Table;
 use Tk::Tiler;
 use Tk::Photo;
 
+use Database;
+use GUI;
+
 
 my $mw = MainWindow->new();
 my $image_id = 0;

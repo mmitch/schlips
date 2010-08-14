@@ -6,6 +6,7 @@ use Tk;
 use Tk::Table;
 use Tk::Tiler;
 use Tk::Photo;
+use Tk::JPEG;
 
 use Database;
 use GUI;
@@ -30,14 +31,14 @@ sub read_images($)
 
     opendir DIR, $dir or die "$!";
     foreach my $file (readdir DIR) {
-	next unless $file =~ /\.gif$/;
+	next unless $file =~ /\.jpg$/;
 	my $hash = {
 	    NAME => $file,
 	    FILE => "$dir$file",
 	    ID => 'image'.$image_id++,
 	};
 	push @files, $hash;
-	$mw->Photo($hash->{ID}, -file => '/home/mitch/git/schlips/'.$hash->{FILE});
+	$mw->Photo($hash->{ID}, -file => '/home/mitch/git/schlips/'.$hash->{FILE}, -format => 'jpeg');
     }
     closedir DIR or die "$!";
 

@@ -1,15 +1,48 @@
 #!/usr/bin/perl -w
 use strict;
 
+# Module einbinden
 use Tk;
 use Tk::Table;
+use Tk::Tiler;
+use Tk::Photo;
 
 
-############# data
+my $mw = MainWindow->new();
+my $image_id = 0;
 
-my @hemden   = qw(rot schwarz weiß);
-my @anzuege  = qw(schwarz grau);
-my @schlipse = qw(rot blau grün);
+############# Daten einliesen
+
+# erstmal alle Bilder einlesen aus den drei Ordnern
+my (@hemden, @anzuege, @schlipse);
+
+sub read_images($)
+# Liest alle Bilder aus einem Ordner ein
+# 1:   $dir -> Name des Ordners, aus dem gelesen wird
+# ret: Array mit den Bildern
+{
+    my ($dir) = (@_);
+    my @files;
+
+    opendir DIR, $dir or die "$!";
+    foreach my $file (readdir DIR) {
+	next unless $file =~ /\.gif$/;
+	my $hash = {
+	    NAME => $file,
+	    FILE => "$dir$file",
+	    ID => 'image'.$image_id++,
+	};
+	push @files, $hash;
+	$mw->Photo($hash->{ID}, -file => '/home/mitch/git/schlips/'.$hash->{FILE});
+    }
+    closedir DIR or die "$!";
+
+    return @files;
+}
+@hemden   = read_images('hemden/');
+@anzuege  = read_images('anzuege/');
+@schlipse = read_images('schlipse/');
+
 
 my @combinations;
 
@@ -22,7 +55,8 @@ foreach my $anzug (@anzuege) {
 		HEMD => $hemd,
 		SCHLIPS => $schlips,
 		RESULT => 0,
-		DATE => '',
+		DATE => 0,
+		KEY => "$anzug->{NAME}:$hemd->{NAME}:$schlips->{NAME}",
 	    };
 	    push @combinations, $combination;
 	}
@@ -30,19 +64,83 @@ foreach my $anzug (@anzuege) {
 }
 
 
-############# grfx 
+## data IO
 
-my $mw = MainWindow->new();
+sub read_data(@)
+{
+    my (@combos) = (@_);
+    my %input;
+    open DATA, '<', 'data.dat' or die "$!";
+    while (my $line = <DATA>) {
+	chomp $line;
+	if ($line =~ /(.*:.*:.*):(\d):(\d+)/) {
+	    $input{$1} = {
+		RESULT => $2,
+		DATE   => $3
+	    };
+	}
+    }
+    close DATA or die "$!";
 
-$mw->Label(-text => 'Hello, world!')->pack;
+    foreach my $combo (@combos) {
+	my $key = $combo->{KEY};
+	if (exists $input{$key}) {
+	    $combo->{DATE} = $input{$key}->{DATE};
+	    $combo->{RESULT} = $input{$key}->{RESULT};
+	}
+    }
+}
+
+sub save_data(@)
+{
+    my (@combos) = (@_);
+    open DATA, '>', 'data.dat' or die "$!";
+    
+    my $time = time();
+
+    foreach my $combo (@combos) {
+	if ($combo->{RESULT}) {
+	    printf DATA "%s:%s:%s:%d:%d\n",
+	    $combo->{ANZUG}->{NAME},
+	    $combo->{HEMD}->{NAME},
+	    $combo->{SCHLIPS}->{NAME},
+	    $combo->{RESULT},
+	    $time,
+	    ;
+	}
+    }
+
+    close DATA or die "$!";
+}
+
+
+############# grfx
+
+my $buttons = $mw->Tiler(-columns => 2)->pack(-expand => 1);
+
+$buttons->Button(
+	    -text    => 'Quit',
+	    -command => sub { 
+		exit;
+	    },
+	    )->pack;
+
+$buttons->Button(
+	    -text    => 'Save',
+	    -command => sub {
+		save_data(@combinations);
+		exit;
+	    },
+	    )->pack;
+
 my $table = $mw->Table(
 		    -columns => 5,
 		    -rows => @combinations + 1,
-#		    -scrollbars => anchor,
+#		    -scrollbars => 'anchor',
 		    -fixedrows => 1,
-		    )->pack;
+		    )->pack();
 
-sub put_table_row($$$$$$$) {
+sub put_table_headers($$$$$$$) {
     my ($table, $row, @text) = (@_);
     my $col = 0;
     foreach my $text (@text) {
@@ -50,21 +148,41 @@ sub put_table_row($$$$$$$) {
     }
 }
 
-my $row = 0;
-put_table_row($table, $row, 'Anzug', 'Hemd', 'Schlips', 'Auswahl', 'Datum');
-foreach my $combo (@combinations) {
-    put_table_row($table, ++$row,
-		  $combo->{ANZUG},
-		  $combo->{HEMD},
-		  $combo->{SCHLIPS},
-		  $combo->{RESULT},
-		  $combo->{DATE}
-		  );
+sub new_label($$$) {
+    my ($table, $row, $text) = (@_);
+    if ($row % 2) {
+	$table->Label(-text => $text, -background => 'grey');
+    } else {
+	$table->Label(-text => $text, -background => 'green');
+    }
 }
 
-$mw->Button(
-	    -text    => 'Quit',
-	    -command => sub { exit },
-	    )->pack;
+sub new_image($$$) {
+    my ($table, $row, $file) = (@_);
+    $table->Label(-image => $file->{ID});
+}
+
+sub put_table_row($$$) {
+    my ($table, $row, $combo) = (@_);
+    my $col = 0;
+    
+    $table->put($row, $col++, new_image($table, $row, $combo->{ANZUG}));
+    $table->put($row, $col++, new_image($table, $row, $combo->{HEMD}));
+    $table->put($row, $col++, new_image($table, $row, $combo->{SCHLIPS}));
+    my $rbframe = $table->Tiler(-columns => 3);
+    $rbframe->Radiobutton(-text => 'HUI' , -value => 1, -variable => \$combo->{RESULT})->pack();
+    $rbframe->Radiobutton(-text => 'OK'  , -value => 2, -variable => \$combo->{RESULT})->pack();
+    $rbframe->Radiobutton(-text => 'PFUI', -value => 3, -variable => \$combo->{RESULT})->pack();
+    $table->put($row, $col++, $rbframe);
+    $table->put($row, $col++, new_label($table, $row, $combo->{DATE} ? scalar localtime($combo->{DATE}) : ''));
+}
+
+read_data(@combinations);
+
+my $row = 0;
+put_table_headers($table, $row, 'Anzug', 'Hemd', 'Schlips', 'Auswahl', 'Datum');
+foreach my $combo (@combinations) {
+    put_table_row($table, ++$row, $combo);
+}
 
 MainLoop;

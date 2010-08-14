@@ -150,13 +150,13 @@ sub put_table_headers($$$$$$$) {
     }
 }
 
-sub new_label($$$) {
-    my ($table, $row, $text) = (@_);
+sub new_label($$) {
+    my ($table, $text) = (@_);
     $table->Label(-text => $text);
 }
 
-sub new_image($$$) {
-    my ($table, $row, $file) = (@_);
+sub new_image($$) {
+    my ($table, $file) = (@_);
     $table->Label(-image => $file->{ID});
 }
 
@@ -164,9 +164,9 @@ sub put_table_row($$$) {
     my ($table, $row, $combo) = (@_);
     my $col = 0;
     
-    $table->put($row, $col++, new_image($table, $row, $combo->{ANZUG}));
-    $table->put($row, $col++, new_image($table, $row, $combo->{HEMD}));
-    $table->put($row, $col++, new_image($table, $row, $combo->{SCHLIPS}));
+    $table->put($row, $col++, new_image($table, $combo->{ANZUG}));
+    $table->put($row, $col++, new_image($table, $combo->{HEMD}));
+    $table->put($row, $col++, new_image($table, $combo->{SCHLIPS}));
     my $rbframe = $table->Tiler(-columns => 3);
     $rbframe->Radiobutton(-text => 'HUI' ,
 			  -value => 1, -variable => \$combo->{RESULT},
@@ -181,7 +181,7 @@ sub put_table_row($$$) {
 			  -command => sub { $combo->{DATE} = time(); }
 			  )->pack();
     $table->put($row, $col++, $rbframe);
-    $table->put($row, $col++, new_label($table, $row, $combo->{DATE} ? scalar localtime($combo->{DATE}) : ''));
+    $table->put($row, $col++, new_label($table, $combo->{DATE} ? scalar localtime($combo->{DATE}) : ''));
 }
 
 read_data(@combinations);

@@ -10,6 +10,7 @@ use Tk::Photo;
 
 my $mw = MainWindow->new();
 my $image_id = 0;
+my $datafile = 'data.dat';
 
 ############# Daten einliesen
 
@@ -69,8 +70,10 @@ foreach my $anzug (@anzuege) {
 sub read_data(@)
 {
     my (@combos) = (@_);
+    return unless -e $datafile;
+    
     my %input;
-    open DATA, '<', 'data.dat' or die "$!";
+    open DATA, '<', $datafile or die "$!";
     while (my $line = <DATA>) {
 	chomp $line;
 	if ($line =~ /(.*:.*:.*):(\d):(\d+)/) {
@@ -94,7 +97,7 @@ sub read_data(@)
 sub save_data(@)
 {
     my (@combos) = (@_);
-    open DATA, '>', 'data.dat' or die "$!";
+    open DATA, '>', $datafile or die "$!";
     
     my $time = time();
 

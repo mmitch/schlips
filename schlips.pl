@@ -105,7 +105,7 @@ sub save_data(@)
 	    $combo->{HEMD}->{NAME},
 	    $combo->{SCHLIPS}->{NAME},
 	    $combo->{RESULT},
-	    $time,
+	    $combo->{DATE},
 	    ;
 	}
     }
@@ -136,7 +136,6 @@ $buttons->Button(
 my $table = $mw->Table(
 		    -columns => 5,
 		    -rows => @combinations + 1,
-#		    -scrollbars => 'anchor',
 		    -fixedrows => 1,
 		    )->pack();
 
@@ -150,11 +149,7 @@ sub put_table_headers($$$$$$$) {
 
 sub new_label($$$) {
     my ($table, $row, $text) = (@_);
-    if ($row % 2) {
-	$table->Label(-text => $text, -background => 'grey');
-    } else {
-	$table->Label(-text => $text, -background => 'green');
-    }
+    $table->Label(-text => $text);
 }
 
 sub new_image($$$) {
@@ -170,9 +165,18 @@ sub put_table_row($$$) {
     $table->put($row, $col++, new_image($table, $row, $combo->{HEMD}));
     $table->put($row, $col++, new_image($table, $row, $combo->{SCHLIPS}));
     my $rbframe = $table->Tiler(-columns => 3);
-    $rbframe->Radiobutton(-text => 'HUI' , -value => 1, -variable => \$combo->{RESULT})->pack();
-    $rbframe->Radiobutton(-text => 'OK'  , -value => 2, -variable => \$combo->{RESULT})->pack();
-    $rbframe->Radiobutton(-text => 'PFUI', -value => 3, -variable => \$combo->{RESULT})->pack();
+    $rbframe->Radiobutton(-text => 'HUI' ,
+			  -value => 1, -variable => \$combo->{RESULT},
+			  -command => sub { $combo->{DATE} = time(); }
+			  )->pack();
+    $rbframe->Radiobutton(-text => 'OK'  ,
+			  -value => 2, -variable => \$combo->{RESULT},
+			  -command => sub { $combo->{DATE} = time(); }
+			  )->pack();
+    $rbframe->Radiobutton(-text => 'PFUI',
+			  -value => 3, -variable => \$combo->{RESULT},
+			  -command => sub { $combo->{DATE} = time(); }
+			  )->pack();
     $table->put($row, $col++, $rbframe);
     $table->put($row, $col++, new_label($table, $row, $combo->{DATE} ? scalar localtime($combo->{DATE}) : ''));
 }

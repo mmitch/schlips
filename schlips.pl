@@ -38,7 +38,7 @@ sub read_images($)
 	    ID => 'image'.$image_id++,
 	};
 	push @files, $hash;
-	$mw->Photo($hash->{ID}, -file => '/home/mitch/git/schlips/'.$hash->{FILE}, -format => 'jpeg');
+	$mw->Photo($hash->{ID}, -file => $hash->{FILE}, -format => 'jpeg');
     }
     closedir DIR or die "$!";
 

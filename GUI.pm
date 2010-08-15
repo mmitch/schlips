@@ -104,7 +104,7 @@ sub create_buttons($$)
 
     my $save_button = $button_frame->Button(
 					    -text    => 'Save',
-					    -command => sub { Storage::save_data($data); exit; },
+					    -command => sub { Storage::save_user_data($data); exit; },
 					    );
     
     # Buttons in den Rahmen packen
